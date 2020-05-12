@@ -1,0 +1,517 @@
+datas segment
+	menu db "Rotate about the X-axis---d",0ah,"Rotate about the Y-axis---w",0ah,"Rotate about the Z-axis---a",0ah,"Exit---e",'$'
+	choice db 0ah,0ah,0ah,'1.Cube',0ah,'2.Regular icosahedron',0ah,0ah,0ah,'Enjoy it and have fun!','$'
+	xs db 'x-axis:','$'
+	ys db 'y-axis:','$'
+	zs db 'z-axis:','$'
+	hc db ' degree',0ah,'$'
+	angelx dw 0
+	angely dw 0
+	angelz dw 0
+	p1 dw 100,100,100
+	p2 dw -100,100,100
+	p3 dw -100,-100,100
+	p4 dw 100,-100,100
+	p5 dw 100,100,-100
+	p6 dw -100,100,-100
+	p7 dw -100,-100,-100
+	p8 dw 100,-100,-100
+	sp1 dw 0,100,162
+	sp2 dw 0,100,-162
+	sp3 dw 0,-100,162
+	sp4 dw 0,-100,-162
+	sp5 dw 100,162,0
+	sp6 dw 100,-162,0
+	sp7 dw -100,162,0
+	sp8 dw -100,-162,0
+	sp9 dw 162,0,100
+	sp10 dw 162,0,-100
+	sp11 dw -162,0,100
+	sp12 dw -162,0,-100
+	color db 0
+	x1 dw 0
+	y1 dw 0
+	x2 dw 0
+	y2 dw 0
+	z1 dw 0
+	z2 dw 0
+	y21 dw 0
+	x21 dw 0
+	y12 dw 0
+	x12 dw 0
+	xz dw 0;x
+	xz2 dw 0;y
+	xz3 dw 0;z
+	sin dw 0,174,342,500,643,766,866,940,985,1000,985,940,866,766,643,500,342,174,0
+	cos dw 1000,985,940,866,766,643,500,342,174,0,-174,-342,-500,-643,-766,-866,-940,-985,-1000
+	
+	size1 db 38
+	s1 dw 0
+	c1 dw 0
+	xls dw 0
+	yls dw 0
+	zls dw 0
+	ch1 dw 0
+datas ends
+
+
+stacks segment
+     db 300 dup(0)
+stacks ends
+
+
+codes segment
+    assume cs:codes,ds:datas,ss:stacks
+start:
+	mov ax,datas
+	mov ds,ax
+
+show macro name
+	lea dx,name
+	mov ah,09h
+	int 21h
+endm
+
+shownumber macro number,str
+	local pd
+	show str
+	cmp word ptr number,180
+	jbe pd
+	sub word ptr number,190
+pd:	mov ax,word ptr number
+	mov dl,100
+	div dl
+	mov bx,ax
+	mov dl,al
+	add dl,48
+	mov ah,02h
+	int 21h
+	mov al,bh
+	mov ah,0
+	mov dl,10
+	div dl
+	mov bx,ax
+	mov dl,al
+	add dl,48
+	mov ah,02h
+	int 21h
+	mov dl,48
+	int 21h
+	show hc
+endm
+
+corr macro dis
+	local ag,fl,ol
+ag:	cmp word ptr dis,32768
+	jb fl
+	add word ptr dis,1000
+	jmp ag
+fl:	cmp word ptr dis,1000
+	jb ol
+	sub dis,1000
+	jmp fl
+ol:
+endm
+
+
+
+cf macro
+	local ye,ye2,xo
+	mov cx,0
+	cmp ax,32768
+	jb ye
+	inc cx
+	neg ax
+ye:	cmp bx,32768
+	jb ye2
+	inc cx
+	neg bx
+ye2:mul bx
+	mov bx,1000
+	div bx
+	cmp cx,1
+	jne xo
+	neg ax
+xo:
+endm
+
+xzhou macro xx,yy,zz
+	local  h1,h2
+	mov ax,yy
+	mov yls,ax
+	mov ax,zz
+	mov zls,ax
+
+	lea bx,sin
+	add bx,xz
+	mov ax,ds:[bx]
+	mov s1,ax
+	lea bx,cos
+	add bx,xz
+	mov ax,ds:[bx]
+	mov c1,ax;s1,c1 cunchu
+	
+	mov ax,c1
+	mov bx,yls
+	cf
+	mov yy,ax
+	mov ax,zls
+	mov bx,s1
+	cf
+	sub yy,ax
+
+	mov ax,yls
+	mov bx,s1
+	cf
+	mov zz,ax
+	mov ax,zls
+	mov bx,c1
+	cf
+	add zz,ax
+endm
+
+yzhou macro xxy,yyy,zzy
+	mov ax,xxy
+	mov xls,ax
+	mov ax,zzy
+	mov zls,ax
+
+	lea bx,sin
+	add bx,xz2
+	mov ax,ds:[bx]
+	mov s1,ax
+	lea bx,cos
+	add bx,xz2
+	mov ax,ds:[bx]
+	mov c1,ax;s1,c1 cunchu
+	
+	mov ax,xls
+	mov bx,c1
+	cf
+	mov xxy,ax
+	mov ax,zls
+	mov bx,s1
+	cf
+	add xxy,ax
+	
+	mov ax,xls
+	neg ax
+	mov bx,s1
+	cf
+	mov zzy,ax
+	mov ax,zls
+	mov bx,c1
+	cf
+	add zzy,ax
+endm
+
+zzhou macro xxz,yyz,zzz
+	mov ax,xxz
+	mov xls,ax
+	mov ax,yyz
+	mov yls,ax
+
+	lea bx,sin
+	add bx,xz3
+	mov ax,ds:[bx]
+	mov s1,ax
+	lea bx,cos
+	add bx,xz3
+	mov ax,ds:[bx]
+	mov c1,ax;s1,c1 cunchu
+	
+	mov ax,xls
+	mov bx,c1
+	cf
+	mov xxz,ax
+	mov ax,yls
+	mov bx,s1
+	cf
+	sub xxz,ax
+	
+	mov ax,xls
+	mov bx,s1
+	cf
+	mov yyz,ax
+	mov ax,yls
+	mov bx,c1
+	cf
+	add yyz,ax
+endm
+
+printoneline macro point1,point2,col
+	lea di,point1
+	lea si,point2
+	mov ax,ds:[di]
+	mov word ptr x1,ax
+	mov ax,ds:[di+2]
+	mov word ptr y1,ax
+	mov ax,ds:[di+4]
+	mov word ptr z1,ax
+	mov ax,ds:[si]
+	mov word ptr x2,ax
+	mov ax,ds:[si+2]
+	mov word ptr y2,ax
+	mov ax,ds:[si+4]
+	mov word ptr z2,ax
+	xzhou x1,y1,z1
+	xzhou x2,y2,z2
+	yzhou x1,y1,z1
+	yzhou x2,y2,z2
+	zzhou x1,y1,z1
+	zzhou x2,y2,z2
+	add word ptr x1,320
+	add word ptr x2,320
+	add word ptr y1,240
+	add word ptr y2,240
+	mov byte ptr color,col
+	call line
+endm
+
+printsquare macro
+	mov ah,0
+	mov al,12h  ;640*480*16
+	int 10h
+	printoneline p1,p2,1
+	printoneline p2,p3,1
+	printoneline p3,p4,1
+	printoneline p1,p4,1
+	printoneline p1,p5,2
+	printoneline p2,p6,2
+	printoneline p3,p7,2
+	printoneline p4,p8,2
+	printoneline p5,p6,3
+	printoneline p5,p8,3
+	printoneline p6,p7,3
+	printoneline p7,p8,3
+endm
+
+printmul macro
+	mov ah,0
+	mov al,12h
+	int 10h
+	printoneline sp1,sp3,1
+	printoneline sp1,sp5,1
+	printoneline sp1,sp7,1
+	printoneline sp1,sp9,1
+	printoneline sp1,sp11,1
+	printoneline sp2,sp4,2
+	printoneline sp2,sp5,2
+	printoneline sp2,sp7,2
+	printoneline sp2,sp10,2
+	printoneline sp2,sp12,2
+	printoneline sp3,sp4,3
+	printoneline sp3,sp8,3
+	printoneline sp3,sp9,3
+	printoneline sp3,sp11,3
+	printoneline sp4,sp6,4
+	printoneline sp4,sp8,4
+	printoneline sp4,sp10,4
+	printoneline sp4,sp12,4
+	printoneline sp5,sp7,5
+	printoneline sp5,sp9,5
+	printoneline sp5,sp10,5
+	printoneline sp6,sp8,6
+	printoneline sp6,sp9,6
+	printoneline sp6,sp10,6
+	printoneline sp7,sp11,7
+	printoneline sp7,sp12,7
+	printoneline sp8,sp11,13
+	printoneline sp8,sp12,13
+	printoneline sp9,sp10,14
+	printoneline sp11,sp12,15
+
+endm
+
+mo macro add
+	mov ax,add
+	mov bl,size1
+	div bl
+	mov al,ah
+	mov ah,0
+	mov add,ax
+endm
+	show menu
+	show choice
+	mov ah,07
+	int 21h
+	cmp al,'1'
+	jne xh
+	mov word ptr ch1,1
+	
+xh:	
+	mov ah,07
+	int 21h
+	cmp al,'d'
+	jne k
+	add word ptr xz,2
+	add word ptr angelx,10
+	mo xz
+	jmp ou
+k:	cmp al,'w'
+	jne k1
+	add word ptr xz2,2
+	add word ptr angely,10
+	mo xz2
+	jmp ou
+k1:	cmp al,'a'
+	jne k2
+	add word ptr xz3,2
+	add word ptr angelz,10
+	mo xz3
+	jmp ou
+
+k2:	cmp al,'e'
+	jmp near ptr o
+	
+ou:	
+	cmp word ptr ch1,1
+	je em
+	jmp near ptr kep
+em:	printsquare
+go:	shownumber angelx,xs
+	shownumber angely,ys
+	shownumber angelz,zs
+	jmp near ptr xh
+kep:printmul
+	jmp go
+o:	mov ah, 4ch
+    int 21h
+
+line proc
+    corr x1
+	corr y1
+	corr x2
+	corr y2     
+	mov ax,x1
+    mov bx,x2
+    sub ax,bx
+    mov word ptr x12,ax
+    mov ax,x1
+    mov bx,x2
+    sub bx,ax
+    mov word ptr x21,bx
+	mov ax,y1
+    mov bx,y2
+    sub ax,bx
+    mov word ptr y12,ax
+    mov ax,y1
+    mov bx,y2
+    sub bx,ax
+    mov word ptr y21,bx
+    mov si,0
+    mov di,0
+    mov ax,x1
+    mov bx,x2
+    mov cx,y1
+    mov dx,y2
+    cmp ax,bx
+    ja lfu
+lzh:
+    cmp cx,dx
+    ja lzhfu
+lzhzh:
+    mov ah,0ch
+    mov al,color
+    mov bh,0
+    mov cx,x1
+    mov dx,y1
+l1:
+	add si,word ptr y21
+    cmp si,word ptr x21
+    jbe l2
+    sub si,word ptr x21
+    inc dx
+l2:
+	add di,word ptr x21
+    cmp di,word ptr y21
+    jbe l3
+    sub di,word ptr y21
+    inc cx
+l3:
+	int 10h
+    cmp cx,x2
+    jb l1
+    lea bx,exit
+    jmp bx
+lzhfu:
+    mov ah,0ch
+    mov al,color
+    mov bh,0
+    mov cx,x1
+    mov dx,y1
+l11:
+	add si,word ptr y12
+    cmp si,word ptr x21
+    jbe l12
+    sub si,word ptr x21
+    dec dx
+l12:
+	add di,word ptr x21
+    cmp di,word ptr y12
+    jbe l13
+    sub di,word ptr y12
+    inc cx
+l13:
+	int 10h
+    cmp cx,x2
+    jb l11
+    lea bx,exit
+    jmp bx
+
+lfu:
+    mov cx,y1
+    mov dx,y2
+    cmp cx,dx
+    ja lfufu
+lfuzh:
+    mov ah,0ch
+    mov al,color
+    mov bh,0
+    mov cx,x1
+    mov dx,y1
+l21:
+    add si,word ptr y21
+    cmp si,word ptr x12
+    jbe l22
+    sub si,word ptr x12
+    inc dx
+l22:
+	add di,word ptr x12
+    cmp di,word ptr y21
+    jbe l23
+    sub di,word ptr y21
+    dec cx
+l23:
+	int 10H
+    cmp cx,x2
+    ja l21
+    jmp exit
+lfufu:
+    mov cx,x1
+    mov dx,y1
+    mov ah,0ch
+    mov al,color
+    mov bh,0
+l31:
+	add si,word ptr y12
+    cmp si,word ptr x12
+    jbe l32
+    sub si,word ptr x12
+    dec dx
+l32:
+	add di,word ptr x12
+    cmp di,word ptr y12
+    jbe l33
+    sub di,word ptr y12
+    dec cx
+l33:
+	int 10h
+    cmp cx,x2
+    ja l31
+exit:
+	ret
+line endp
+
+codes ends
+end start
